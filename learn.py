@@ -44,7 +44,7 @@ import plotly.graph_objects as go
 
 tf.get_logger().setLevel(logging.ERROR)
 
-data_dir = './data_set/'
+data_dir = './train/data_set/'
 spkr_id_file = './data_lists/speaker_id.scp'
 
 DROPOUT = 0 # для первого слоя 0
