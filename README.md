@@ -7,4 +7,4 @@
 5) Поместить в папку random_samples незнакомые аудиофайлы для оценки работоспособности модели и запустить get_ident_test.py
 
 
-Для построчной оценки и идентификации говорящего смотри репозиторий https://github.com/Ankudar/whisper
+Для построчной оценки и идентификации говорящего смотри репозиторий [https://github.com/Ankudar/whisper](https://github.com/Ankudar/whisper_with_ident)https://github.com/Ankudar/whisper_with_ident
