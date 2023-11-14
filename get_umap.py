@@ -57,22 +57,27 @@ y_pred = load_model.predict(test_data)
 
 y_pred_labels = [np.argmax(y_pred[i]) for i in range(len(y_pred))]
 
+# Получение представлений перед последним слоем
 model_without_last_layer = tf.keras.models.Model(inputs=load_model.inputs, outputs=load_model.layers[-2].output)
 features = model_without_last_layer.predict(test_data)
 
+# Применение UMAP
 reducer = umap.UMAP(spread=3.0)
 embedding = reducer.fit_transform(features)
 
 test_labels_multiclass = np.argmax(test_labels, axis=1)
 
+# Загрузка файла и создание словаря
 spkr_id_dict = {}
 with open('./data_lists/speaker_id.scp', 'r', encoding = 'utf-8') as f:
     for line in f:
         id, name = line.strip().split(':')
         spkr_id_dict[int(id)] = name
 
+# Замена ID класса на имена в метках классов
 class_names = [spkr_id_dict[i] for i in np.argmax(test_labels, axis=1)]
 
+# Преобразование в numpy массив для удобства
 features_np = np.array(features)
 
 # Define the number of neighbors for KNN
@@ -94,8 +99,10 @@ outliers = np.mean(distances, axis=1) > threshold
 features_clean = features_np[~outliers]
 test_labels_clean = test_labels_multiclass[~outliers]
 
+# Применение UMAP к очищенным данным
 embedding_clean = reducer.fit_transform(features_clean)
 
+# Визуализация
 fig = go.Figure(data=go.Scatter(
     x=embedding_clean[:, 0],
     y=embedding_clean[:, 1],
@@ -116,6 +123,7 @@ fig.update_layout(title='speaker dataset', autosize=False,
 
 fig.show()
 
+# # Импорт DecisionBoundaryDisplay
 # from sklearn.inspection import DecisionBoundaryDisplay
 
 # # Создание и отображение решающей границы

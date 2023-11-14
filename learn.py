@@ -44,12 +44,13 @@ import plotly.graph_objects as go
 
 tf.get_logger().setLevel(logging.ERROR)
 
-data_dir = './train/data_set/'
+data_dir = './data_set/'
 spkr_id_file = './data_lists/speaker_id.scp'
 
 DROPOUT = 0 # для первого слоя 0
 DROPOUT_CONV = 0  # для слоев Conv1D 0
 DROPOUT_DENSE = 0.1  # для слоев Dense 0,1
+BATCH_SIZE = 0
 EPOCHS = 1000
 LEARNING_RATE = 0.001 #0.0005 или 0.001
 EARLY_STOP = 20
@@ -125,6 +126,10 @@ def read_data(file_path):
     for line in lines:
         path, label = line.strip().split(":")
         wav_data, _ = librosa.load(path, sr=16000)  # Load the audio file using librosa
+        # if len(wav_data) < 112000:  # If the audio file is shorter than 112000 samples
+        #     wav_data = np.pad(wav_data, (0, 112000 - len(wav_data)))  # Pad it with zeros
+        # else:
+        #     wav_data = wav_data[:112000]  # If it's longer, trim it
         data.append(wav_data)
         labels.append(int(label))
 
@@ -158,19 +163,13 @@ x = LeakyReLU(alpha=0.2)(x)
 x = Dropout(DROPOUT_CONV)(x) #DROPOUT
 x = MaxPooling1D(pool_size=2)(x)
 
-x = Conv1D(64, 3, strides=1, padding='valid')(x)
+x = Conv1D(32, 3, strides=1, padding='valid')(x)
 x = BatchNormalization(momentum=0.05)(x)
 x = LeakyReLU(alpha=0.2)(x)
 x = Dropout(DROPOUT_CONV)(x)
 x = MaxPooling1D(pool_size=2)(x)
 
 x = Conv1D(64, 3, strides=1, padding='valid')(x)
-x = BatchNormalization(momentum=0.05)(x)
-x = LeakyReLU(alpha=0.2)(x)
-x = Dropout(DROPOUT_CONV)(x)
-x = MaxPooling1D(pool_size=2)(x)
-
-x = Conv1D(128, 3, strides=1, padding='valid')(x)
 x = BatchNormalization(momentum=0.05)(x)
 x = LeakyReLU(alpha=0.2)(x)
 x = Dropout(DROPOUT_CONV)(x)
@@ -188,18 +187,7 @@ x = LeakyReLU(alpha=0.2)(x)
 x = Dropout(DROPOUT_CONV)(x)
 x = MaxPooling1D(pool_size=2)(x)
 
-x = Conv1D(512, 3, strides=1, padding='valid')(x)
-x = BatchNormalization(momentum=0.05)(x)
-x = LeakyReLU(alpha=0.2)(x)
-x = Dropout(DROPOUT_CONV)(x)
-x = MaxPooling1D(pool_size=2)(x)
-
 x = Flatten()(x)
-
-x = Dense(256)(x)
-x = BatchNormalization(momentum=0.05, epsilon=1e-5)(x)
-x = LeakyReLU(alpha=0.2)(x)
-x = Dropout(DROPOUT_CONV)(x) #DROPOUT_DENSE
 
 x = Dense(256)(x)
 x = BatchNormalization(momentum=0.05, epsilon=1e-5)(x)
@@ -237,6 +225,7 @@ class CustomCallback(tf.keras.callbacks.Callback):
                     f.write(f"val_loss: {logs['val_loss']}\n")
                     f.write(f"val_accuracy: {logs['val_accuracy']}\n")
 
+# Используйте свой пользовательский обратный вызов вместе с ModelCheckpoint
 model_checkpoint = ModelCheckpoint("final-model", save_weights_only=False, monitor='val_loss', mode='min', save_best_only=True)
 custom_callback = CustomCallback("final-model")
 
@@ -246,12 +235,13 @@ model.compile(optimizer=RMSprop(learning_rate = LEARNING_RATE),
 
 history = model.fit(x=train_data,
                     y=train_labels,
+                    batch_size=BATCH_SIZE,  # Добавьте размер пакета здесь
                     epochs=EPOCHS,
-                    validation_data=(test_data,test_labels),
-                    callbacks=[early_stop, model_checkpoint, custom_callback])  # Добавляем custom_callback в список callbacks
+                    validation_data=(test_data, test_labels),
+                    callbacks=[early_stop, model_checkpoint, custom_callback])
 
 # Evaluate the model
-model.evaluate(test_data,test_labels)
+model.evaluate(test_data, test_labels, batch_size=BATCH_SIZE)
 
 plt.plot(history.history['accuracy'])
 plt.plot(history.history['val_accuracy'])
@@ -270,29 +260,33 @@ plt.legend(['train', 'test'], loc='upper left')
 plt.show()
 
 load_model = tf.keras.models.load_model("final-model")
-y_pred = load_model.predict(test_data)
+y_pred = load_model.predict(test_data, batch_size=BATCH_SIZE)
 # print(len(y_pred))
 
 y_pred_labels = [np.argmax(y_pred[i]) for i in range(len(y_pred))]
 
+# Получение представлений перед последним слоем
 model_without_last_layer = tf.keras.models.Model(inputs=model.inputs, outputs=model.layers[-2].output)
 features = model_without_last_layer.predict(test_data)
 
+# Применение UMAP
 reducer = umap.UMAP()
 embedding = reducer.fit_transform(features)
 
 test_labels_multiclass = np.argmax(test_labels, axis=1)
 print(classification_report(test_labels_multiclass, y_pred_labels))
 
+# Загрузка файла и создание словаря
 spkr_id_dict = {}
 with open('./data_lists/speaker_id.scp', 'r', encoding = 'utf-8') as f:
     for line in f:
         id, name = line.strip().split(':')
         spkr_id_dict[int(id)] = name
 
-
+# Замена ID класса на имена в метках классов
 class_names = [spkr_id_dict[i] for i in np.argmax(test_labels, axis=1)]
 
+# Визуализация
 fig = go.Figure(data=go.Scatter(
     x=embedding[:, 0],
     y=embedding[:, 1],
