@@ -52,7 +52,7 @@ DROPOUT_CONV = 0  # для слоев Conv1D 0
 DROPOUT_DENSE = 0.1  # для слоев Dense 0,1
 BATCH_SIZE = 0
 EPOCHS = 1000
-LEARNING_RATE = 0.001 #0.0005 или 0.001
+LEARNING_RATE = 0.0005 #0.0005 или 0.001
 EARLY_STOP = 20
 
 # print(os.listdir(data_dir))
@@ -163,7 +163,7 @@ x = LeakyReLU(alpha=0.2)(x)
 x = Dropout(DROPOUT_CONV)(x) #DROPOUT
 x = MaxPooling1D(pool_size=2)(x)
 
-x = Conv1D(32, 3, strides=1, padding='valid')(x)
+x = Conv1D(64, 3, strides=1, padding='valid')(x)
 x = BatchNormalization(momentum=0.05)(x)
 x = LeakyReLU(alpha=0.2)(x)
 x = Dropout(DROPOUT_CONV)(x)
@@ -181,7 +181,7 @@ x = LeakyReLU(alpha=0.2)(x)
 x = Dropout(DROPOUT_CONV)(x)
 x = MaxPooling1D(pool_size=2)(x)
 
-x = Conv1D(256, 3, strides=1, padding='valid')(x)
+x = Conv1D(128, 3, strides=1, padding='valid')(x)
 x = BatchNormalization(momentum=0.05)(x)
 x = LeakyReLU(alpha=0.2)(x)
 x = Dropout(DROPOUT_CONV)(x)
@@ -194,7 +194,7 @@ x = BatchNormalization(momentum=0.05, epsilon=1e-5)(x)
 x = LeakyReLU(alpha=0.2)(x)
 x = Dropout(DROPOUT_CONV)(x) #DROPOUT_DENSE
 
-x = Dense(128)(x)
+x = Dense(256)(x)
 x = BatchNormalization(momentum=0.05, epsilon=1e-5)(x)
 x = LeakyReLU(alpha=0.2)(x)
 x = Dropout(DROPOUT_CONV)(x) #DROPOUT_DENSE
@@ -306,3 +306,4 @@ fig.update_layout(title='speaker dataset', autosize=False,
                   margin=dict(l=50, r=50, b=100, t=100, pad=10))
 
 fig.show()
+

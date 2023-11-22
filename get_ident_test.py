@@ -72,9 +72,12 @@ for new_file in os.listdir(new_audio_files):
         if probability >= 95:
             spkrs.append(spkr_id[spkr])
     if spkrs:
-        most_common_spkr = Counter(spkrs).most_common(1)[0]
-        # print(most_common_spkr)
-        print(f"File: {new_file} - Most common speaker is: {most_common_spkr[0]} ({most_common_spkr[1]} times)")
+        most_common_spkrs = Counter(spkrs).most_common(3)  # Изменено здесь
+        # Вывод трех наиболее вероятных спикеров
+        print(f"File: {new_file} - Top 3 most common speakers: ", end="")
+        for spkr, count in most_common_spkrs:
+            print(f"{spkr} ({count} times)", end=", ")
+        print()  # Добавляет перевод строки в конце вывода
     else:
         print(f"File: {new_file} - Detected speaker is: Unknown")
 

@@ -27,7 +27,7 @@ input_dir = './train/data_set/'
 WORK_THREADS = 10
 SAMPLING_RATE = 16000
 THRESHOLD = 2000 # продолжительность чанков, 1000 = 1 секунда, для сплита файлов
-AUDIO_TIME = 2 # сколько в каждой папке будет аудио часов
+AUDIO_TIME = 4 # сколько в каждой папке будет аудио часов
 
 def convert_to_wav(file_path):
     try:
@@ -157,7 +157,7 @@ def check_long(input_dir):
                     total_duration += len(audio)
             durations[folder] = total_duration / 1000  # возвращаем длительность в секундах
             # если общая продолжительность меньше 30 минут, удаляем подпапку
-            if total_duration / 1000 < 1800:
+            if total_duration / 1000 < 3600:
                 shutil.rmtree(folder_path)
     # сортируем словарь по длительности
     sorted_durations = dict(sorted(durations.items(), key=lambda item: item[1]))
@@ -287,14 +287,14 @@ def normalize(input_dir):
 
 def main():
     convert_all_files(input_dir)
+    normalize(input_dir)
     remove_silence_all_files(input_dir)
     remove_null_files_and_subdir(input_dir, check_duration=10)
     check_long(input_dir)
     split_audio(input_dir)
     remove_null_files_and_subdir(input_dir, check_duration=THRESHOLD/1000)
     balance_audio_duration_in_subdirectories(input_dir)
-    remove_null_files_and_subdir(input_dir, check_duration=THRESHOLD/1000)
-    normalize(input_dir)
+    # remove_null_files_and_subdir(input_dir, check_duration=THRESHOLD/1000)
 
 if __name__ == '__main__':
     main()
